@@ -77,6 +77,10 @@ public class DistroFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
+        if (distroMapper.nonUseDistro()) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
         ReuseHttpServletRequest req = new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
         
@@ -129,9 +133,9 @@ public class DistroFilter implements Filter {
             final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
             
-            RestResult<String> result = HttpClient
-                    .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
-                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), req.getMethod());
+            RestResult<String> result = HttpClient.request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList,
+                    paramsValue, body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(),
+                    req.getMethod());
             String data = result.ok() ? result.getData() : result.getMessage();
             try {
                 WebUtils.response(resp, data, result.getCode());
